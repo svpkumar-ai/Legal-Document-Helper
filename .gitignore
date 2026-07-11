@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Legal Document Helper (Node) ---
+node_modules/
+.env
+.env.local
+npm-debug.log*
+
+data/
+
+# Vercel
+.vercel

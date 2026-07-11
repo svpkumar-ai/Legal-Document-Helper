@@ -1,0 +1,22 @@
+{
+  "name": "legal-document-helper",
+  "version": "1.0.0",
+  "description": "AI Legal Document Helper — explain, summarise, risk-check, and draft legal documents, with an AI assistant bot. Powered by Claude via the Anthropic API.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.111.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mammoth": "^1.12.0",
+    "multer": "^1.4.5-lts.1",
+    "pdf-parse": "^1.1.4"
+  }
+}
