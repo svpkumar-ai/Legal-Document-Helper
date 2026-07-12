@@ -395,12 +395,6 @@ function setRunning(on) {
   running = on;
   els.runBtn.disabled = on;
   els.runBtn.classList.toggle("is-loading", on);
-  if (on) {
-    els.runBtn.dataset.label = els.runLabel.textContent;
-    els.runLabel.textContent = "Working…";
-  } else if (els.runBtn.dataset.label) {
-    els.runLabel.textContent = els.runBtn.dataset.label;
-  }
 }
 
 async function runTool() {
@@ -416,13 +410,12 @@ async function runTool() {
   els.hint.textContent = "";
   setRunning(true);
   resetOutput();
-  showOverlay("Analysing your document…", "The AI is reading it now — the answer will stream in shortly.");
-  els.output.className = "output md is-streaming";
-  const render = () => { els.output.innerHTML = renderMarkdown(rawOutput); els.output.scrollTop = els.output.scrollHeight; };
+  showOverlay("Analysing your document…", "This can take a moment — the full result will appear here when it's ready.");
+  els.output.className = "output md";
   try {
     await streamPost("/api/tool", { mode, document: doc, instructions }, {
-      onDelta: (t) => { hideOverlay(); rawOutput += t; render(); },
-      onError: (m) => { hideOverlay(); rawOutput += `\n\n> ⚠️ **${m}**`; render(); },
+      onDelta: (t) => { rawOutput += t; },
+      onError: (m) => { rawOutput += `\n\n> ⚠️ **${m}**`; },
     });
   } finally {
     hideOverlay();
@@ -442,13 +435,12 @@ async function runCompare() {
   els.hint.textContent = "";
   setRunning(true);
   resetOutput();
-  showOverlay("Comparing the two versions…", "The AI is diffing them now — the redline will stream in shortly.");
-  els.output.className = "output md is-streaming";
-  const render = () => { els.output.innerHTML = renderMarkdown(rawOutput); els.output.scrollTop = els.output.scrollHeight; };
+  showOverlay("Comparing the two versions…", "This can take a moment — the full redline will appear here when it's ready.");
+  els.output.className = "output md";
   try {
     await streamPost("/api/compare", { documentA: a, documentB: b }, {
-      onDelta: (t) => { hideOverlay(); rawOutput += t; render(); },
-      onError: (m) => { hideOverlay(); rawOutput += `\n\n> ⚠️ **${m}**`; render(); },
+      onDelta: (t) => { rawOutput += t; },
+      onError: (m) => { rawOutput += `\n\n> ⚠️ **${m}**`; },
     });
   } finally {
     hideOverlay();
