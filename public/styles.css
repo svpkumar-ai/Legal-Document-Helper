@@ -159,7 +159,7 @@ body {
   line-height: 1.5;
   padding: 12px;
 }
-.doc-input:focus, .instructions:focus, .chat-input:focus {
+.doc-input:focus, .instructions:focus {
   outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
   outline-offset: 1px;
 }
@@ -191,7 +191,25 @@ body {
 }
 .run-btn:hover { background: var(--primary-dark); }
 .run-btn:active { transform: translateY(1px); }
-.run-btn:disabled { opacity: 0.6; cursor: progress; }
+.run-btn:disabled { opacity: 0.85; cursor: progress; }
+.run-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+/* In-button spinner — only visible while the run is in flight */
+.btn-spinner {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  display: none;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+.run-btn.is-loading .btn-spinner { display: inline-block; }
 
 .hint { margin: 8px 2px 0; font-size: 12px; color: var(--text-soft); min-height: 16px; }
 .hint.error { color: var(--danger); }
@@ -273,159 +291,6 @@ body {
   vertical-align: top;
 }
 .md th { background: var(--surface-2); font-weight: 700; }
-
-/* ---------- Chat bot ---------- */
-.chat-toggle {
-  position: fixed;
-  right: 22px;
-  bottom: 22px;
-  z-index: 40;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  border: none;
-  background: var(--primary);
-  color: #fff;
-  font: inherit;
-  font-weight: 700;
-  font-size: 15px;
-  padding: 13px 20px;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: var(--shadow);
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-.chat-toggle:hover { background: var(--primary-dark); transform: translateY(-1px); }
-.chat-toggle-emoji { font-size: 20px; }
-
-.chat-window {
-  position: fixed;
-  right: 22px;
-  bottom: 22px;
-  z-index: 41;
-  width: min(400px, calc(100vw - 32px));
-  height: min(620px, calc(100vh - 44px));
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-.chat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  background: var(--primary);
-  color: #fff;
-}
-.chat-title { display: flex; align-items: center; gap: 10px; }
-.chat-avatar { font-size: 22px; }
-.chat-title strong { display: block; font-size: 15px; }
-.chat-status { font-size: 12px; opacity: 0.85; }
-.icon-btn {
-  appearance: none;
-  border: none;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-}
-.icon-btn:hover { background: rgba(255, 255, 255, 0.3); }
-
-.chat-log {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.msg { max-width: 88%; font-size: 14px; }
-.msg-bubble {
-  padding: 9px 13px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-}
-.msg.user { align-self: flex-end; }
-.msg.user .msg-bubble {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-  border-bottom-right-radius: 4px;
-}
-.msg.assistant { align-self: flex-start; }
-.msg.assistant .msg-bubble {
-  background: var(--surface-2);
-  border-bottom-left-radius: 4px;
-}
-.msg.assistant .msg-bubble.is-streaming::after {
-  content: "▋";
-  animation: blink 1s steps(2, start) infinite;
-  color: var(--primary);
-}
-.chat-intro {
-  color: var(--text-soft);
-  font-size: 13px;
-  text-align: center;
-  padding: 20px 10px;
-}
-.chat-suggestions { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-.suggestion {
-  appearance: none;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  text-align: left;
-  padding: 8px 11px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-.suggestion:hover { border-color: var(--primary); }
-
-.chat-form {
-  display: flex;
-  gap: 8px;
-  padding: 10px;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-}
-.chat-input {
-  flex: 1;
-  resize: none;
-  max-height: 120px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-2);
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-  padding: 10px 12px;
-}
-.chat-send {
-  appearance: none;
-  border: none;
-  background: var(--primary);
-  color: #fff;
-  width: 42px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 16px;
-}
-.chat-send:hover { background: var(--primary-dark); }
-.chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* Compact markdown inside chat bubbles */
-.msg-bubble .md p:first-child { margin-top: 0; }
-.msg-bubble .md p:last-child { margin-bottom: 0; }
-.msg-bubble .md ul, .msg-bubble .md ol { padding-left: 1.2em; }
 
 /* ---------- Risk band (status) palette ---------- */
 :root {
@@ -554,21 +419,6 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ---------- Chat grounding chip ---------- */
-.chat-ground {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px; font-size: 12.5px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
-}
-.chat-ground .cg-name { font-weight: 600; color: var(--accent); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chat-ground .cg-toggle {
-  appearance: none; border: none; background: transparent; cursor: pointer;
-  color: var(--text-soft); font: inherit; font-size: 12px; text-decoration: underline;
-}
-.chat-ground .cg-toggle:hover { color: var(--text); }
-
 /* ============================================================
  * Look-and-feel polish layer + Knowledge Base / overlay components
  * (appended; later rules intentionally refine earlier ones)
@@ -604,30 +454,6 @@ body {
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.header-actions { display: flex; align-items: center; gap: 12px; }
-
-/* Knowledge Base header button */
-.kb-btn {
-  appearance: none;
-  display: inline-flex; align-items: center; gap: 8px;
-  font: inherit; font-weight: 600; font-size: 13px;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 8px 14px; border-radius: 999px;
-  cursor: pointer; transition: all 0.15s ease;
-}
-.kb-btn:hover { border-color: var(--primary); color: var(--primary); }
-.kb-count {
-  display: inline-grid; place-items: center;
-  min-width: 20px; height: 20px; padding: 0 6px;
-  font-size: 12px; font-weight: 700; line-height: 1;
-  color: var(--text-soft);
-  background: var(--surface-2);
-  border-radius: 999px;
-}
-.kb-count.has { color: #fff; background: var(--primary); }
-
 /* Panels: softer elevation + subtle hover lift */
 .panel { transition: box-shadow 0.2s ease, transform 0.2s ease; }
 .tab.is-active {
@@ -640,20 +466,6 @@ body {
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   box-shadow: 0 6px 16px color-mix(in srgb, var(--primary) 28%, transparent);
 }
-.run-btn.compact { padding: 10px 18px; width: auto; }
-
-/* Small inline / icon buttons */
-.link-btn {
-  appearance: none; border: 0; background: none;
-  font: inherit; font-size: 12px; font-weight: 600;
-  color: var(--primary); cursor: pointer; padding: 2px 4px;
-  border-radius: 6px;
-}
-.link-btn:hover { text-decoration: underline; }
-.link-btn:disabled { color: var(--text-soft); cursor: default; text-decoration: none; }
-.link-btn.danger { color: var(--danger); }
-.icon-btn.dark { color: var(--text-soft); }
-
 /* ---------- Full-screen loading overlay ---------- */
 .overlay {
   position: fixed; inset: 0; z-index: 100;
@@ -684,64 +496,6 @@ body {
 .overlay-title { margin: 0; font-size: 16px; font-weight: 700; color: var(--text); }
 .overlay-sub { margin: 8px 0 0; font-size: 13px; color: var(--text-soft); line-height: 1.5; }
 
-/* ---------- Knowledge Base panel ---------- */
-.kb-panel {
-  position: fixed; inset: 0; z-index: 90;
-  display: flex; justify-content: flex-end;
-  background: color-mix(in srgb, var(--bg) 45%, transparent);
-  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-  animation: overlay-in 0.15s ease;
-}
-.kb-panel[hidden] { display: none; }
-.kb-panel-inner {
-  width: min(460px, 100%);
-  height: 100%;
-  background: var(--surface);
-  border-left: 1px solid var(--border);
-  box-shadow: -12px 0 40px rgba(0,0,0,0.18);
-  padding: 22px clamp(18px, 3vw, 26px);
-  overflow-y: auto;
-  animation: kb-slide 0.22s ease;
-}
-@keyframes kb-slide { from { transform: translateX(30px); opacity: 0.4; } to { transform: none; opacity: 1; } }
-.kb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.kb-head h2 { margin: 0; font-size: 18px; }
-.kb-desc { margin: 6px 0 0; font-size: 13px; color: var(--text-soft); line-height: 1.5; }
-.kb-add {
-  margin: 20px 0;
-  padding: 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.kb-add textarea.doc-input { min-height: 110px; }
-.kb-add-actions { display: flex; justify-content: flex-end; }
-.kb-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.kb-empty { font-size: 13px; color: var(--text-soft); line-height: 1.5; padding: 8px 2px; }
-.kb-item {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 12px 14px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-.kb-item-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.kb-item-name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kb-item-meta { font-size: 12px; color: var(--text-soft); }
-
-/* ---------- Chat: grounding sources chip ---------- */
-.msg-sources {
-  margin: 4px 0 2px 4px;
-  font-size: 11px; color: var(--text-soft);
-  display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
-}
-.msg-sources span {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: color-mix(in srgb, var(--accent) 85%, var(--text));
-  padding: 2px 8px; border-radius: 999px; font-weight: 600;
-}
-
 /* ============================================================
  * Buttons & labels polish layer
  * (appended last so it refines every earlier button/label rule)
@@ -752,47 +506,28 @@ body {
 .tab:focus-visible,
 .run-btn:focus-visible,
 .ghost-btn:focus-visible,
-.icon-btn:focus-visible,
-.kb-btn:focus-visible,
-.ics-btn:focus-visible,
-.link-btn:focus-visible,
-.suggestion:focus-visible,
-.chat-toggle:focus-visible,
-.chat-send:focus-visible {
+.ics-btn:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--primary) 65%, transparent);
   outline-offset: 2px;
-}
-/* Focus ring inside the coloured chat header needs light contrast */
-.chat-header .icon-btn:focus-visible {
-  outline-color: rgba(255, 255, 255, 0.85);
 }
 
 /* ---- Consistent hover / press micro-interactions ----
  * Give the secondary buttons the same lift-and-press the primary ones have. */
 .tab,
 .ghost-btn,
-.kb-btn,
-.ics-btn,
-.icon-btn,
-.suggestion {
+.ics-btn {
   transition: background 0.15s ease, border-color 0.15s ease,
     color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
 }
 .tab:hover,
 .ghost-btn:hover,
-.kb-btn:hover,
-.ics-btn:hover,
-.suggestion:hover {
+.ics-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 3px 10px color-mix(in srgb, var(--primary) 14%, transparent);
 }
 .tab:active,
 .ghost-btn:active,
-.kb-btn:active,
-.ics-btn:active,
-.icon-btn:active,
-.suggestion:active,
-.chat-send:active {
+.ics-btn:active {
   transform: translateY(0);
   box-shadow: none;
 }
@@ -807,21 +542,9 @@ body {
   background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
-/* Suggestion chips read as tappable, tint on hover */
-.suggestion:hover {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 8%, var(--surface-2));
-}
-
-/* Round icon buttons behave crisply on press */
-.icon-btn:active { transform: scale(0.92); }
-
 /* Consistent disabled treatment for every button */
 .tab:disabled,
-.ghost-btn:disabled,
-.kb-btn:disabled,
-.suggestion:disabled,
-.chat-toggle:disabled {
+.ghost-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
@@ -833,8 +556,7 @@ body {
 
 /* ---- Label & heading polish ---- */
 /* Panel titles: a touch more weight and tighter tracking */
-.panel-head h2,
-.kb-head h2 {
+.panel-head h2 {
   font-weight: 700;
   letter-spacing: -0.01em;
 }

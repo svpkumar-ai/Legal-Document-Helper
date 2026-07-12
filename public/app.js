@@ -203,7 +203,7 @@ const MODES = {
   },
 };
 
-const appState = { mode: "explain", primaryDoc: { name: "", text: "" }, groundingEnabled: true };
+const appState = { mode: "explain", primaryDoc: { name: "", text: "" } };
 
 const els = {
   tabs: document.querySelectorAll(".tab"),
@@ -214,6 +214,7 @@ const els = {
   instructions: document.getElementById("instructions"),
   runBtn: document.getElementById("run-btn"),
   runLabel: document.querySelector(".run-label"),
+  runSpinner: document.querySelector("#run-btn .btn-spinner"),
   output: document.getElementById("output"),
   hint: document.getElementById("input-hint"),
   copyBtn: document.getElementById("copy-btn"),
@@ -248,10 +249,7 @@ function updatePrimaryDoc() {
   const cfg = MODES[appState.mode];
   const primaryId = cfg.slots[0].id; // 'doc' or 'A'
   const text = getSlotValue(primaryId);
-  const prevText = appState.primaryDoc.text;
   appState.primaryDoc = { name: slotFiles[primaryId] || "your document", text };
-  if (text && text !== prevText) appState.groundingEnabled = true;
-  updateChatGround();
 }
 
 function buildSlots(mode) {
@@ -313,8 +311,7 @@ async function uploadFile(slotId, file) {
     slotFiles[slotId] = j.filename;
     if (meta) {
       meta.innerHTML =
-        `<span class="file-chip">📄 ${escapeHtml(j.filename)}</span> · ${j.chars.toLocaleString()} chars ` +
-        `<button class="link-btn" data-act="tokb" data-slot="${slotId}">＋ Add to Knowledge Base</button>`;
+        `<span class="file-chip">📄 ${escapeHtml(j.filename)}</span> · ${j.chars.toLocaleString()} chars`;
     }
     updatePrimaryDoc();
   } catch (err) {
@@ -348,15 +345,6 @@ els.slots.addEventListener("click", (e) => {
     if (meta) meta.innerHTML = "";
     updatePrimaryDoc();
     ta.focus();
-  } else if (act === "tokb") {
-    const text = ta ? ta.value.trim() : "";
-    const name = slotFiles[id] || "Pasted document";
-    if (text.length < 20) return;
-    btn.disabled = true;
-    btn.textContent = "Adding…";
-    kbAddSource(name, text)
-      .then(() => { btn.textContent = "✓ In Knowledge Base"; })
-      .catch((err) => { btn.disabled = false; btn.textContent = `⚠️ ${err.message || "Failed"}`; });
   }
 });
 
@@ -406,6 +394,13 @@ function runActive() {
 function setRunning(on) {
   running = on;
   els.runBtn.disabled = on;
+  els.runBtn.classList.toggle("is-loading", on);
+  if (on) {
+    els.runBtn.dataset.label = els.runLabel.textContent;
+    els.runLabel.textContent = "Working…";
+  } else if (els.runBtn.dataset.label) {
+    els.runLabel.textContent = els.runBtn.dataset.label;
+  }
 }
 
 async function runTool() {
@@ -421,14 +416,16 @@ async function runTool() {
   els.hint.textContent = "";
   setRunning(true);
   resetOutput();
+  showOverlay("Analysing your document…", "The AI is reading it now — the answer will stream in shortly.");
   els.output.className = "output md is-streaming";
   const render = () => { els.output.innerHTML = renderMarkdown(rawOutput); els.output.scrollTop = els.output.scrollHeight; };
   try {
     await streamPost("/api/tool", { mode, document: doc, instructions }, {
-      onDelta: (t) => { rawOutput += t; render(); },
-      onError: (m) => { rawOutput += `\n\n> ⚠️ **${m}**`; render(); },
+      onDelta: (t) => { hideOverlay(); rawOutput += t; render(); },
+      onError: (m) => { hideOverlay(); rawOutput += `\n\n> ⚠️ **${m}**`; render(); },
     });
   } finally {
+    hideOverlay();
     finishStream();
   }
 }
@@ -445,14 +442,16 @@ async function runCompare() {
   els.hint.textContent = "";
   setRunning(true);
   resetOutput();
+  showOverlay("Comparing the two versions…", "The AI is diffing them now — the redline will stream in shortly.");
   els.output.className = "output md is-streaming";
   const render = () => { els.output.innerHTML = renderMarkdown(rawOutput); els.output.scrollTop = els.output.scrollHeight; };
   try {
     await streamPost("/api/compare", { documentA: a, documentB: b }, {
-      onDelta: (t) => { rawOutput += t; render(); },
-      onError: (m) => { rawOutput += `\n\n> ⚠️ **${m}**`; render(); },
+      onDelta: (t) => { hideOverlay(); rawOutput += t; render(); },
+      onError: (m) => { hideOverlay(); rawOutput += `\n\n> ⚠️ **${m}**`; render(); },
     });
   } finally {
+    hideOverlay();
     finishStream();
   }
 }
@@ -640,245 +639,6 @@ els.copyBtn.addEventListener("click", async () => {
     setTimeout(() => (els.copyBtn.textContent = "Copy"), 1500);
   } catch (_) {}
 });
-
-/* ============================================================
- * AI assistant bot (chat) — with optional document grounding
- * ========================================================== */
-const chat = {
-  toggle: document.getElementById("chat-toggle"),
-  window: document.getElementById("chat-window"),
-  close: document.getElementById("chat-close"),
-  ground: document.getElementById("chat-ground"),
-  log: document.getElementById("chat-log"),
-  form: document.getElementById("chat-form"),
-  input: document.getElementById("chat-input"),
-  send: document.getElementById("chat-send"),
-};
-
-let chatHistory = [];
-let chatBusy = false;
-let chatOpen = false;
-
-const SUGGESTIONS = [
-  "What is an indemnity clause, in plain English?",
-  "What should I check before signing an NDA?",
-  "Explain 'liquidated damages' with an example.",
-];
-
-function updateChatGround() {
-  const el = chat.ground;
-  if (!chatOpen) return;
-  if (!appState.primaryDoc.text) { el.hidden = true; el.innerHTML = ""; return; }
-  el.hidden = false;
-  if (appState.groundingEnabled) {
-    el.innerHTML = `<span>📎</span><span class="cg-name">Answering from: ${escapeHtml(appState.primaryDoc.name)}</span><button class="cg-toggle" type="button">detach</button>`;
-    el.querySelector(".cg-toggle").onclick = () => { appState.groundingEnabled = false; updateChatGround(); };
-  } else {
-    el.innerHTML = `<span>💬</span><span class="cg-name" style="color:var(--text-soft)">General mode</span><button class="cg-toggle" type="button">use my document</button>`;
-    el.querySelector(".cg-toggle").onclick = () => { appState.groundingEnabled = true; updateChatGround(); };
-  }
-}
-
-function renderIntro() {
-  chat.log.innerHTML = `<div class="chat-intro">
-      👋 Hi, I'm <strong>Lexi</strong>. Ask me anything about legal documents, or load one on the left and I'll answer <em>from that document</em> with citations.
-      <div class="chat-suggestions">
-        ${SUGGESTIONS.map((s) => `<button class="suggestion" type="button">${escapeHtml(s)}</button>`).join("")}
-      </div>
-      <p style="margin-top:14px;font-size:12px;opacity:.75">I share information, not legal advice.</p>
-    </div>`;
-  chat.log.querySelectorAll(".suggestion").forEach((b, idx) =>
-    b.addEventListener("click", () => { chat.input.value = SUGGESTIONS[idx]; chat.form.requestSubmit(); })
-  );
-}
-
-function addMessage(role, text) {
-  const wrap = document.createElement("div");
-  wrap.className = `msg ${role}`;
-  const bubble = document.createElement("div");
-  bubble.className = "msg-bubble" + (role === "assistant" ? " md" : "");
-  bubble.textContent = text;
-  wrap.appendChild(bubble);
-  chat.log.appendChild(wrap);
-  chat.log.scrollTop = chat.log.scrollHeight;
-  return bubble;
-}
-
-function openChat() {
-  chat.window.hidden = false;
-  chat.toggle.style.display = "none";
-  chatOpen = true;
-  if (chatHistory.length === 0) renderIntro();
-  updateChatGround();
-  chat.input.focus();
-}
-function closeChat() { chat.window.hidden = true; chat.toggle.style.display = ""; chatOpen = false; }
-
-chat.toggle.addEventListener("click", openChat);
-chat.close.addEventListener("click", closeChat);
-chat.input.addEventListener("input", () => {
-  chat.input.style.height = "auto";
-  chat.input.style.height = Math.min(chat.input.scrollHeight, 120) + "px";
-});
-chat.input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); chat.form.requestSubmit(); }
-});
-
-chat.form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (chatBusy) return;
-  const text = chat.input.value.trim();
-  if (!text) return;
-  if (chatHistory.length === 0) chat.log.innerHTML = "";
-
-  chat.input.value = "";
-  chat.input.style.height = "auto";
-  addMessage("user", text);
-  chatHistory.push({ role: "user", content: text });
-
-  chatBusy = true;
-  chat.send.disabled = true;
-  const bubble = addMessage("assistant", "");
-  bubble.classList.add("is-streaming");
-  let acc = "";
-  const render = () => { bubble.innerHTML = renderMarkdown(acc); chat.log.scrollTop = chat.log.scrollHeight; };
-
-  const body = { messages: chatHistory };
-  if (appState.groundingEnabled && appState.primaryDoc.text) {
-    body.documentContext = appState.primaryDoc;
-  }
-
-  let sources = [];
-  try {
-    await streamPost("/api/chat", body, {
-      onDelta: (t) => { acc += t; render(); },
-      onMeta: (m) => { if (Array.isArray(m.sources)) sources = m.sources; },
-      onError: (m) => { acc += `\n\n> ⚠️ **${m}**`; render(); },
-    });
-  } finally {
-    bubble.classList.remove("is-streaming");
-    if (sources.length) {
-      const cite = document.createElement("div");
-      cite.className = "msg-sources";
-      cite.innerHTML = `📚 Grounded on: ${sources.map((s) => `<span>${escapeHtml(s)}</span>`).join("")}`;
-      bubble.parentElement.appendChild(cite);
-    }
-    if (!acc.trim()) { acc = "_(no response)_"; render(); }
-    chatHistory.push({ role: "assistant", content: acc });
-    chatBusy = false;
-    chat.send.disabled = false;
-    chat.input.focus();
-  }
-});
-
-/* ============================================================
- * Knowledge Base (RAG sources)
- * ========================================================== */
-const kbEls = {
-  btn: document.getElementById("kb-btn"),
-  count: document.getElementById("kb-count"),
-  panel: document.getElementById("kb-panel"),
-  close: document.getElementById("kb-close"),
-  name: document.getElementById("kb-name"),
-  text: document.getElementById("kb-text"),
-  addBtn: document.getElementById("kb-add-btn"),
-  list: document.getElementById("kb-list"),
-};
-
-let kbSources = [];
-
-function setKbCount(n) {
-  if (!kbEls.count) return; // header KB button was removed
-  kbEls.count.textContent = String(n);
-  kbEls.count.classList.toggle("has", n > 0);
-}
-
-async function kbRefresh() {
-  try {
-    const res = await fetch("/api/kb");
-    const j = await res.json();
-    kbSources = j.sources || [];
-  } catch (_) {
-    kbSources = [];
-  }
-  setKbCount(kbSources.length);
-  renderKbList();
-}
-
-function renderKbList() {
-  if (!kbSources.length) {
-    kbEls.list.innerHTML = `<li class="kb-empty">No sources yet. Add legal texts (statutes, policies, template contracts) so Lexi can ground its answers in them.</li>`;
-    return;
-  }
-  kbEls.list.innerHTML = kbSources
-    .map(
-      (s) => `<li class="kb-item">
-        <div class="kb-item-body">
-          <span class="kb-item-name">📄 ${escapeHtml(s.name)}</span>
-          <span class="kb-item-meta">${s.chunks} chunk${s.chunks === 1 ? "" : "s"}</span>
-        </div>
-        <button class="link-btn danger" data-kb-del="${escapeHtml(s.id)}">Remove</button>
-      </li>`
-    )
-    .join("");
-}
-
-// Used both by the panel and the "Add to Knowledge Base" slot button.
-async function kbAddSource(name, text) {
-  const res = await fetch("/api/kb", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, text }),
-  });
-  const j = await res.json();
-  if (!res.ok) throw new Error(j.error || "Could not add source");
-  await kbRefresh();
-  return j.source;
-}
-
-async function kbRemove(id) {
-  await fetch(`/api/kb/${encodeURIComponent(id)}`, { method: "DELETE" });
-  await kbRefresh();
-}
-
-function openKb() { kbEls.panel.hidden = false; kbRefresh(); }
-function closeKb() { kbEls.panel.hidden = true; }
-
-if (kbEls.btn) kbEls.btn.addEventListener("click", () => { if (kbEls.panel.hidden) openKb(); else closeKb(); });
-kbEls.close.addEventListener("click", closeKb);
-kbEls.panel.addEventListener("click", (e) => {
-  if (e.target === kbEls.panel) closeKb(); // click backdrop to close
-  const del = e.target.closest("[data-kb-del]");
-  if (del) kbRemove(del.getAttribute("data-kb-del"));
-});
-
-kbEls.addBtn.addEventListener("click", async () => {
-  const name = kbEls.name.value.trim() || "Untitled source";
-  const text = kbEls.text.value.trim();
-  if (text.length < 20) {
-    kbEls.text.focus();
-    kbEls.addBtn.textContent = "Paste more text…";
-    setTimeout(() => (kbEls.addBtn.textContent = "Add source"), 1500);
-    return;
-  }
-  kbEls.addBtn.disabled = true;
-  kbEls.addBtn.textContent = "Adding…";
-  try {
-    await kbAddSource(name, text);
-    kbEls.name.value = "";
-    kbEls.text.value = "";
-    kbEls.addBtn.textContent = "✓ Added";
-  } catch (err) {
-    kbEls.addBtn.textContent = `⚠️ ${err.message || "Failed"}`;
-  } finally {
-    setTimeout(() => {
-      kbEls.addBtn.disabled = false;
-      kbEls.addBtn.textContent = "Add source";
-    }, 1200);
-  }
-});
-
-kbRefresh();
 
 // Initial tool render — runs last, after every const/let above is initialised.
 applyMode("explain");
