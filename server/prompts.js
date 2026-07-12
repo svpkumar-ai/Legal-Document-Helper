@@ -16,26 +16,30 @@ Ground rules that apply to everything you produce:
 export const PROMPTS = {
   explain: `${SHARED_PREAMBLE}
 
-TASK: Explain the provided contract or legal document in plain language.
+TASK: Explain the provided contract or legal document in plain language, covering the ENTIRE document.
 
-Produce your answer as GitHub-flavored Markdown with these sections:
-1. **In one sentence** — what this document is and what it does.
-2. **Who's involved** — the parties and their roles.
-3. **What each side must do** — the core obligations, as a simple bulleted list.
-4. **Plain-language walkthrough** — go section by section, translating legalese into everyday language. Use short paragraphs or bullets.
-5. **Watch-outs** — anything a normal person would be surprised by (auto-renewals, penalties, waivers, exclusivity, etc.).
+HARD LIMIT: Your whole response must be NO MORE THAN 30 lines total — counting every line, including headings and blank lines. Never exceed 30 lines. Be economical: short bullets and phrases, not long paragraphs.
 
-Keep it friendly and concrete. Quote short snippets from the document when it helps anchor the explanation.`,
+Produce concise GitHub-flavored Markdown covering, in this order:
+- **What it is** — one line: the document type and its purpose.
+- **Parties** — who's involved and their roles (one line).
+- **Key terms** — the core points actually present (obligations, payment, term/duration, termination, liability, IP, confidentiality, governing law, etc.), one short bullet each.
+- **Watch-outs** — anything a normal person would be surprised by (auto-renewals, penalties, waivers, exclusivity), one short bullet each.
+
+Cover every substantive part of the document, but ruthlessly prioritise: merge minor points and skip boilerplate to stay within the 30-line limit.`,
 
   summarize: `${SHARED_PREAMBLE}
 
-TASK: Summarise the document and highlight its key clauses.
+TASK: Summarise the document, surfacing only its most relevant and important aspects.
 
-Produce your answer as GitHub-flavored Markdown:
-1. **TL;DR** — 2–4 sentences capturing the whole document.
-2. **Key clauses** — a Markdown table with columns: | Clause | What it says (plain English) | Why it matters |. Cover the important ones: parties, term/duration, payment, termination, liability/indemnity, confidentiality, IP, governing law, renewal, dispute resolution — but only those actually present.
-3. **Key dates & numbers** — bulleted list of every deadline, notice period, dollar amount, and percentage you find, each with a one-line note on what it governs.
-Only include clauses that appear in the document. If an expected clause is absent, do not list it here (the risk checker handles gaps).`,
+Produce your answer as a SINGLE crisp bulleted list in GitHub-flavored Markdown:
+- Use NO MORE THAN 15 bullet points in total. Use fewer if the document is simple — never pad the list to reach 15.
+- Each bullet is one short, self-contained line in plain English. No fluff, no long sentences.
+- Lead each bullet with the aspect in **bold**, then the key detail — e.g. "**Payment:** GBP 2,500/month, non-refundable" or "**Termination:** provider can exit on 7 days' notice; client only for uncured breach".
+- Cover only what actually matters and is present in the document: parties, term/duration, payment, termination, liability/indemnity, confidentiality, IP, governing law, renewal, dispute resolution, and any notable dates, amounts, or one-sided terms.
+- Output ONLY the bullet list — no introduction, no headings, no closing remarks.
+
+Only include what appears in the document. If an expected clause is absent, leave it out (the risk checker handles gaps).`,
 
   risks: `${SHARED_PREAMBLE}
 
