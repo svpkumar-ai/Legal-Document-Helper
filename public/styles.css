@@ -741,3 +741,109 @@ body {
   color: color-mix(in srgb, var(--accent) 85%, var(--text));
   padding: 2px 8px; border-radius: 999px; font-weight: 600;
 }
+
+/* ============================================================
+ * Buttons & labels polish layer
+ * (appended last so it refines every earlier button/label rule)
+ * ========================================================== */
+
+/* ---- Unified keyboard-focus ring on every interactive control ----
+ * Uses :focus-visible so it only shows for keyboard users, not clicks. */
+.tab:focus-visible,
+.run-btn:focus-visible,
+.ghost-btn:focus-visible,
+.icon-btn:focus-visible,
+.kb-btn:focus-visible,
+.ics-btn:focus-visible,
+.link-btn:focus-visible,
+.suggestion:focus-visible,
+.chat-toggle:focus-visible,
+.chat-send:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 65%, transparent);
+  outline-offset: 2px;
+}
+/* Focus ring inside the coloured chat header needs light contrast */
+.chat-header .icon-btn:focus-visible {
+  outline-color: rgba(255, 255, 255, 0.85);
+}
+
+/* ---- Consistent hover / press micro-interactions ----
+ * Give the secondary buttons the same lift-and-press the primary ones have. */
+.tab,
+.ghost-btn,
+.kb-btn,
+.ics-btn,
+.icon-btn,
+.suggestion {
+  transition: background 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+.tab:hover,
+.ghost-btn:hover,
+.kb-btn:hover,
+.ics-btn:hover,
+.suggestion:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+.tab:active,
+.ghost-btn:active,
+.kb-btn:active,
+.ics-btn:active,
+.icon-btn:active,
+.suggestion:active,
+.chat-send:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Secondary buttons: slightly larger tap target + tint on hover */
+.ghost-btn {
+  font-weight: 600;
+  padding: 6px 12px;
+}
+.ghost-btn:hover {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+/* Suggestion chips read as tappable, tint on hover */
+.suggestion:hover {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface-2));
+}
+
+/* Round icon buttons behave crisply on press */
+.icon-btn:active { transform: scale(0.92); }
+
+/* Consistent disabled treatment for every button */
+.tab:disabled,
+.ghost-btn:disabled,
+.kb-btn:disabled,
+.suggestion:disabled,
+.chat-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Primary run button: crisper press, keep the gradient glow */
+.run-btn:active { transform: translateY(1px); box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 24%, transparent); }
+
+/* ---- Label & heading polish ---- */
+/* Panel titles: a touch more weight and tighter tracking */
+.panel-head h2,
+.kb-head h2 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+/* Field labels ("Document", etc.): uppercase micro-label style, consistent
+ * with the dashboard section titles for one cohesive label system. */
+.slot-label {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-soft);
+}
